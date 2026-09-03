@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/leozhengliu-pixel/agent-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/leozhengliu-pixel/agent-chrome/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/agent-chrome)](https://www.npmjs.com/package/agent-chrome)
 
 Generic Chrome MV3 extension plus a local bridge so any coding agent (Cursor, Claude Code, or a stdio MCP client) can drive the user's signed-in Chrome. It is original software: not a ChatGPT or Codex clone, and not locked to a single vendor.
 
@@ -27,55 +28,37 @@ MCP name: `agent-chrome`
 
 ## Quick start
 
-Replace `/ABS/agent-chrome` with the absolute path of your clone.
+Install the public npm package, load the unpacked extension once, then point MCP at `agent-chrome --mcp`. There is no Chrome Web Store listing. Chrome 137+ ignores `--load-extension`; do not use `--remote-debugging-port`.
 
-```bash
-git clone https://github.com/leozhengliu-pixel/agent-chrome.git /ABS/agent-chrome
-cd /ABS/agent-chrome
-npm install
-npm test
-npm run build
-npm run install-host
-```
-
-`npm run pack` writes `dist/agent-chrome-extension.zip` (`manifest.json` at the zip root, no `key.pem`). CI on `main` uploads that zip as artifact `agent-chrome-extension`. Load unpacked is still required once: branded Google Chrome 137+ dropped `--load-extension`. Coding agents should follow [`skills/agent-chrome/SKILL.md`](skills/agent-chrome/SKILL.md).
-
-The MCP/bridge is also on the public npm registry as `agent-chrome`:
+### 1. Install the local bridge and native host
 
 ```bash
 npm install -g agent-chrome
 agent-chrome-install-host
 ```
 
-MCP: `npx -y agent-chrome --mcp`
-GitHub Releases: https://github.com/leozhengliu-pixel/agent-chrome/releases for agent-chrome-extension.zip. Load unpacked still required once. No --load-extension.
+Bins: `agent-chrome` (bridge), `agent-chrome-host`, `agent-chrome-install-host`.
 
-`npm test` compiles TypeScript (`tsc`) then runs `node --test`. `dist/` is gitignored, so build (or test) before installing the host or starting MCP.
-
-### Load the unpacked extension
+### 2. Load the unpacked extension
 
 1. Open `chrome://extensions` and enable Developer mode.
-2. Load unpacked and select the `extension/` directory.
+2. Load unpacked and select the folder that contains `manifest.json`:
+   - Global install: `$(npm root -g)/agent-chrome/extension`
+   - Or unzip the GitHub Release asset [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest)
 3. Confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh` (public key in `manifest.json`; private key at `extension/key.pem`, committed on purpose to pin that ID).
 4. Pin the toolbar icon. The popup shows native-host / bridge status, version, last error, and the MCP command.
 
-Keep the unpacked extension enabled. If Chrome is closed, interactive tools automatically open Google Chrome with your signed-in profile (`Default`, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so Load unpacked is required once (branded Chrome 137+ dropped `--load-extension`). `status` never launches Chrome.
+Keep the unpacked extension enabled. If Chrome is closed, interactive tools automatically open Google Chrome with your signed-in profile (`Default`, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so Load unpacked is required once. `status` never launches Chrome.
 
 Set `AGENT_CHROME_NO_LAUNCH=1` to disable auto-open. The launcher never uses `--headless`, `--remote-debugging-port`, or a temp user-data-dir.
 
-### Start MCP
+### 3. Start MCP
 
 ```bash
-npm run mcp
+npx -y agent-chrome --mcp
 ```
 
-That runs `node dist/bridge/index.js --mcp`. The process binds `127.0.0.1:19831`. If another Agent Chrome bridge already owns that port, MCP attaches to it.
-
-Daemon only (no stdio MCP):
-
-```bash
-npm start
-```
+After a global install you can also run `agent-chrome --mcp`. The process binds `127.0.0.1:19831`. If another Agent Chrome bridge already owns that port, MCP attaches to it.
 
 ### Cursor `mcp.json`
 
@@ -83,8 +66,8 @@ npm start
 {
   "mcpServers": {
     "agent-chrome": {
-      "command": "node",
-      "args": ["/ABS/agent-chrome/dist/bridge/index.js", "--mcp"]
+      "command": "npx",
+      "args": ["-y", "agent-chrome", "--mcp"]
     }
   }
 }
@@ -93,18 +76,31 @@ npm start
 ### Claude Code
 
 ```bash
-claude mcp add agent-chrome -- node /ABS/agent-chrome/dist/bridge/index.js --mcp
+claude mcp add agent-chrome -- npx -y agent-chrome --mcp
 ```
 
 ### Generic stdio
 
 ```bash
-node /ABS/agent-chrome/dist/bridge/index.js --mcp
+npx -y agent-chrome --mcp
 ```
 
 Protocol: JSON-RPC 2.0 NDJSON (`initialize`, `tools/list`, `tools/call`). Server name: `agent-chrome`.
 
 Coding agents: start at [`skills/agent-chrome/SKILL.md`](skills/agent-chrome/SKILL.md).
+
+### From source (optional)
+
+```bash
+git clone https://github.com/leozhengliu-pixel/agent-chrome.git
+cd agent-chrome
+npm install
+npm test
+npm run build
+npm run install-host
+```
+
+Then load unpacked from `extension/` and start MCP with `npm run mcp` (`node dist/bridge/index.js --mcp`). `dist/` is gitignored, so build (or test) before installing the host. `npm run pack` writes `dist/agent-chrome-extension.zip` (`manifest.json` at the zip root, no `key.pem`).
 
 ## Architecture
 
