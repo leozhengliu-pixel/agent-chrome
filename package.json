@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/node": "^20.17.24",
     "@types/ws": "^8.18.1",
-    "typescript": "^5.8.2"
+    "typescript": "^7.0.2"
   },
   "homepage": "https://github.com/leozhengliu-pixel/agent-chrome#readme",
   "bugs": {
