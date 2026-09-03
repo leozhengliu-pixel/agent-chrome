@@ -185,13 +185,21 @@ function resolveRef(tabId, ref) {
   return map[ref];
 }
 
-async function highlightInPage(tabId, rect, label, opts = {}) {
-  const payload = {
-    type: "agent-chrome-highlight",
-    rect,
-    label,
-    pulse: Boolean(opts.pulse),
-  };
+const lastPointer = new Map();
+
+async function viewportCenter(tabId) {
+  try {
+    const metrics = await cdp.send(tabId, "Page.getLayoutMetrics");
+    const view = metrics.cssVisualViewport || metrics.visualViewport || metrics.layoutViewport || {};
+    const width = Number(view.clientWidth || view.width || 800);
+    const height = Number(view.clientHeight || view.height || 600);
+    return { x: width / 2, y: Math.min(180, height / 3) };
+  } catch {
+    return { x: 240, y: 160 };
+  }
+}
+
+async function sendToTab(tabId, payload) {
   try {
     await chrome.tabs.sendMessage(tabId, payload);
   } catch {
@@ -205,6 +213,29 @@ async function highlightInPage(tabId, rect, label, opts = {}) {
       // page may be restricted
     }
   }
+}
+
+async function highlightInPage(tabId, rect, label, opts = {}) {
+  if (rect && Number.isFinite(Number(rect.x)) && Number.isFinite(Number(rect.y))) {
+    lastPointer.set(tabId, { x: Number(rect.x), y: Number(rect.y) });
+  }
+  await sendToTab(tabId, {
+    type: "agent-chrome-highlight",
+    rect,
+    label,
+    pulse: Boolean(opts.pulse),
+  });
+}
+
+async function armPointer(tabId, rect) {
+  const pos = rect || lastPointer.get(tabId) || await viewportCenter(tabId);
+  lastPointer.set(tabId, { x: Number(pos.x), y: Number(pos.y) });
+  await sendToTab(tabId, { type: "agent-chrome-arm-cursor", rect: pos });
+}
+
+async function clearPointer(tabId) {
+  lastPointer.delete(tabId);
+  await sendToTab(tabId, { type: "agent-chrome-clear-highlight" });
 }
 
 export async function status() {
@@ -240,6 +271,7 @@ export async function tabsClose(params) {
   await getTab(tabId);
   await chrome.tabs.remove(tabId);
   tabRefs.delete(tabId);
+  lastPointer.delete(tabId);
   cdp.markDetached(tabId);
   return { closed: tabId };
 }
@@ -249,6 +281,7 @@ export async function tabFocus(params) {
   const tab = await getTab(tabId);
   await chrome.tabs.update(tabId, { active: true });
   await chrome.windows.update(tab.windowId, { focused: true });
+  if (cdp.isAttached(tabId)) await armPointer(tabId);
   return serializeTab(await getTab(tabId));
 }
 
@@ -261,6 +294,7 @@ export async function navigate(params) {
   await chrome.tabs.update(tabId, { url });
   const tab = await waitForLoad(tabId, params.waitUntil || "complete");
   tabRefs.delete(tabId);
+  if (cdp.isAttached(tabId)) await armPointer(tabId);
   return serializeTab(tab);
 }
 
@@ -268,6 +302,7 @@ export async function snapshot(params) {
   const tabId = Number(params.tabId);
   const tab = await ensureTabAllowed(tabId);
   await cdp.ensureAttached(tabId);
+  await armPointer(tabId);
   const tree = await cdp.send(tabId, "Accessibility.getFullAXTree");
   const interestingOnly = params.interestingOnly !== false;
   const built = buildSnapshot(tree.nodes || [], { interestingOnly });
@@ -408,10 +443,21 @@ export async function dispatch(method, params = {}) {
 }
 
 chrome.debugger.onDetach.addListener((source) => {
-  if (source?.tabId != null) cdp.markDetached(source.tabId);
+  if (source?.tabId != null) {
+    const tabId = source.tabId;
+    cdp.markDetached(tabId);
+    void clearPointer(tabId);
+  }
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabRefs.delete(tabId);
+  lastPointer.delete(tabId);
   cdp.markDetached(tabId);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, info) => {
+  if (info.status !== "complete") return;
+  if (!cdp.isAttached(tabId)) return;
+  void armPointer(tabId);
 });
