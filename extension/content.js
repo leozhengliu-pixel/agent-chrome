@@ -4,6 +4,8 @@
 
   const TAB_ICON_ID = "agent-chrome-tab-icon";
 
+  let host = null;
+  let shadow = null;
   let root = null;
   let halo = null;
   let last = null;
@@ -11,9 +13,23 @@
   let applyingFavicon = false;
 
   function ensure() {
-    if (root && root.isConnected) return root;
+    if (host && host.isConnected && root) return root;
+    host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText = [
+      "all:initial",
+      "position:fixed",
+      "left:0",
+      "top:0",
+      "width:0",
+      "height:0",
+      "z-index:2147483647",
+      "pointer-events:none",
+      "overflow:visible",
+    ].join(";");
+    shadow = host.attachShadow({ mode: "closed" });
+
     root = document.createElement("div");
-    root.id = "agent-chrome-cursor";
     root.style.cssText = [
       "position:fixed",
       "left:0",
@@ -47,7 +63,8 @@
 
     root.appendChild(halo);
     root.appendChild(pointer);
-    (document.documentElement || document.body).appendChild(root);
+    shadow.appendChild(root);
+    (document.documentElement || document.body).appendChild(host);
     return root;
   }
 

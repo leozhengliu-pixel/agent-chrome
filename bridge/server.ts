@@ -1,7 +1,8 @@
+import fs from "node:fs";
 import http from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { Session } from "./session.js";
-import { VERSION, BRIDGE_PORT } from "../shared/constants.js";
+import { VERSION, BRIDGE_PORT, MAX_NATIVE_MESSAGE_BYTES } from "../shared/constants.js";
 import { ExtensionDisconnectedError } from "../shared/protocol.js";
 import { INTERACTIVE_TOOLS, TOOLS } from "../shared/tools.js";
 import {
@@ -11,6 +12,7 @@ import {
   launchChrome,
   type LaunchChromeResult,
 } from "../shared/launch-chrome.js";
+import { bearerToken, isAllowedWsOrigin, tokenEquals } from "../shared/auth.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 export type ChromeLauncher = () => LaunchChromeResult | Promise<LaunchChromeResult>;
@@ -22,6 +24,7 @@ export type BridgeOptions = {
   mcpCommand?: string;
   launchChrome?: ChromeLauncher;
   connectTimeoutMs?: number;
+  socketPath?: string;
 };
 
 export type Bridge = {
@@ -30,16 +33,38 @@ export type Bridge = {
   token: string;
   session: Session;
   mcpCommand: string;
+  socketPath?: string;
   rpc: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
   close: () => Promise<void>;
 };
 
-function readBody(req: IncomingMessage): Promise<string> {
+function readBody(req: IncomingMessage, maxBytes = MAX_NATIVE_MESSAGE_BYTES): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on("data", (c) => chunks.push(c as Buffer));
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
+    let size = 0;
+    let done = false;
+    req.on("data", (c: Buffer) => {
+      if (done) return;
+      size += c.length;
+      if (size > maxBytes) {
+        done = true;
+        const err = new Error(`request body too large: ${size} bytes`);
+        (err as NodeJS.ErrnoException).code = "PAYLOAD_TOO_LARGE";
+        reject(err);
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on("end", () => {
+      if (done) return;
+      done = true;
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    req.on("error", (err) => {
+      if (done) return;
+      done = true;
+      reject(err);
+    });
   });
 }
 
@@ -52,10 +77,12 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(data);
 }
 
-function tokenOf(req: IncomingMessage, url: URL): string {
-  const header = req.headers.authorization;
-  if (header && header.toLowerCase().startsWith("bearer ")) return header.slice(7).trim();
-  return url.searchParams.get("token") || "";
+function tokenOf(req: IncomingMessage): string {
+  return bearerToken(req.headers.authorization);
+}
+
+function authorized(req: IncomingMessage, expected: string): boolean {
+  return tokenEquals(tokenOf(req), expected);
 }
 
 export async function startBridge(options: BridgeOptions): Promise<Bridge> {
@@ -67,12 +94,12 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
   let lastLaunch: LaunchChromeResult | null = null;
   let ensuring: Promise<void> | null = null;
 
-  const server = http.createServer(async (req, res) => {
-    const url = new URL(req.url || "/", `http://${host}`);
-    if (tokenOf(req, url) !== options.token) {
+  const httpHandler = async (req: IncomingMessage, res: ServerResponse) => {
+    if (!authorized(req, options.token)) {
       json(res, 401, { error: { code: "UNAUTHORIZED", message: "invalid token" } });
       return;
     }
+    const url = new URL(req.url || "/", `http://${host}`);
     try {
       if (req.method === "GET" && url.pathname === "/health") {
         json(res, 200, { ok: true, version: VERSION });
@@ -99,15 +126,19 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
     } catch (err) {
       const e = err as Error & { code?: string };
       const status =
-        e instanceof ExtensionDisconnectedError || e instanceof ChromeLaunchError ? 503 : 400;
+        e.code === "PAYLOAD_TOO_LARGE"
+          ? 413
+          : e instanceof ExtensionDisconnectedError || e instanceof ChromeLaunchError
+            ? 503
+            : 400;
       json(res, status, { error: { code: e.code || "ERROR", message: e.message } });
     }
-  });
+  };
 
-  const wss = new WebSocketServer({ noServer: true });
-  server.on("upgrade", (req, socket, head) => {
+  const upgradeHandler = (req: IncomingMessage, socket: import("node:stream").Duplex, head: Buffer) => {
     const url = new URL(req.url || "/", `http://${host}`);
-    if (url.pathname !== "/host" || tokenOf(req, url) !== options.token) {
+    const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+    if (url.pathname !== "/host" || !authorized(req, options.token) || !isAllowedWsOrigin(origin)) {
       socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
       socket.destroy();
       return;
@@ -115,7 +146,11 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
     wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
       session.attach(ws);
     });
-  });
+  };
+
+  const server = http.createServer(httpHandler);
+  const wss = new WebSocketServer({ noServer: true });
+  server.on("upgrade", upgradeHandler);
 
   async function doEnsureConnected(): Promise<void> {
     if (session.connected) return;
@@ -191,16 +226,57 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
     server.on("error", reject);
   });
 
+  let sockServer: http.Server | null = null;
+  let usedSocketPath: string | undefined;
+  if (options.socketPath && process.platform !== "win32") {
+    try {
+      fs.rmSync(options.socketPath, { force: true });
+      sockServer = http.createServer(httpHandler);
+      sockServer.on("upgrade", upgradeHandler);
+      const pathToListen = options.socketPath;
+      await new Promise<void>((resolve, reject) => {
+        sockServer!.once("error", reject);
+        sockServer!.listen(pathToListen, () => resolve());
+      });
+      fs.chmodSync(options.socketPath, 0o600);
+      usedSocketPath = options.socketPath;
+    } catch {
+      try {
+        sockServer?.close();
+      } catch {
+        // ignore
+      }
+      sockServer = null;
+      usedSocketPath = undefined;
+      try {
+        fs.rmSync(options.socketPath, { force: true });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   return {
     host,
     port: addressPort(),
     token: options.token,
     session,
     mcpCommand,
+    socketPath: usedSocketPath,
     rpc,
     close: async () => {
       session.close();
+      if (usedSocketPath) {
+        try {
+          fs.rmSync(usedSocketPath, { force: true });
+        } catch {
+          // ignore
+        }
+      }
       await new Promise<void>((resolve) => wss.close(() => resolve()));
+      if (sockServer) {
+        await new Promise<void>((resolve) => sockServer!.close(() => resolve()));
+      }
       await new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
       });

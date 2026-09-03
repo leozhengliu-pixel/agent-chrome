@@ -21,7 +21,7 @@ Use a **headless** browser instead when:
 - The user has not installed this extension
 - You would be automating a throwaway flow that should not touch personal tabs
 
-Do not steal the user's active tab. Prefer `tabs_open` with default isolation (Agent Chrome tab group, `active: false`). Call `tab_focus` only if the user must see the page.
+Do not steal the user's active tab. Prefer `tabs_open` with default isolation (Agent Chrome tab group, `active: false`). That group is only a default for the new tab; later tools are not bound to it and can target any tab in the signed-in profile. Call `tab_focus` only if the user must see the page.
 
 ## Install (no Chrome Web Store)
 
@@ -135,7 +135,7 @@ MCP should already be registered (see Install). Call `status` first. If the exte
 
 No JavaScript evaluation tool in v1.
 
-Site policy: HTTP(S) is allowed by default (no per-site prompt). If a tool fails with `SITE_DENIED`, the domain is on an explicit deny list; do not loop.
+Site policy: public HTTP(S) is allowed by default (no per-site prompt). Loopback, private, link-local, metadata, `file:`/`javascript:`/`data:`/`ftp:`, and `chrome://extensions` are denied. If a tool fails with `SITE_DENIED`, do not loop. `tabId` may be any tab in the profile, not only the Agent Chrome group.
 
 ## Snapshot → act loop
 

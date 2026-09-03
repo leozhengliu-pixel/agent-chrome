@@ -11,7 +11,11 @@ export type ToolDef = {
   inputSchema: JsonSchema;
 };
 
-const tabId = { type: "integer", description: "Chrome tab id" };
+const tabId = {
+  type: "integer",
+  description:
+    "Chrome tab id. May be any tab in this signed-in profile, not only tabs opened by Agent Chrome. Isolation is only the default tabs_open group; later tools are not bound to it.",
+};
 const ref = {
   type: "string",
   description: "Element ref from the latest snapshot for this tab, e.g. e3",
@@ -26,7 +30,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "tabs_list",
-    description: "List open tabs (id, title, url, active, group). Does not change focus.",
+    description: "List open tabs (id, title, url, active, group). Does not change focus. Denied/private/internal URLs are omitted. tabId values can refer to any tab in the profile, not only the Agent Chrome group.",
     inputSchema: {
       type: "object",
       properties: {
@@ -41,7 +45,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "tabs_open",
     description:
-      "Open a URL in a new tab. Defaults to background + Agent Chrome tab group so the user's active tab is not stolen.",
+      "Open a URL in a new tab. Defaults to background + Agent Chrome tab group so the user's active tab is not stolen. That group is only a default for this new tab; later tools are not restricted to it.",
     inputSchema: {
       type: "object",
       properties: {
@@ -58,7 +62,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "tabs_close",
-    description: "Close a tab by id.",
+    description: "Close a tab by id. tabId may be any tab in the profile (subject to site policy).",
     inputSchema: {
       type: "object",
       properties: { tabId },
@@ -68,7 +72,7 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "tab_focus",
-    description: "Focus a tab (and its window). Use sparingly; prefer isolate:true when opening.",
+    description: "Focus a tab (and its window). tabId may be any tab in the profile (subject to site policy). Use sparingly; prefer isolate:true when opening.",
     inputSchema: {
       type: "object",
       properties: { tabId },

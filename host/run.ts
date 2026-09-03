@@ -1,8 +1,10 @@
+import fs from "node:fs";
 import { WebSocket } from "ws";
 import { encodeLengthPrefixed, LengthPrefixedDecoder } from "../shared/framing.js";
 import { VERSION } from "../shared/constants.js";
 import type { RpcResponse } from "../shared/protocol.js";
 import { isRpcRequest } from "../shared/protocol.js";
+import { configDir, verifyBridgeProof } from "../shared/config.js";
 
 export type HostStreams = {
   stdin: NodeJS.ReadableStream;
@@ -10,6 +12,9 @@ export type HostStreams = {
   stderr?: NodeJS.WritableStream;
   url: string;
   token: string;
+  socketPath?: string;
+  requireProof?: boolean;
+  configDir?: string;
 };
 
 function log(streams: HostStreams, msg: string): void {
@@ -29,13 +34,24 @@ export function runHost(streams: HostStreams): Promise<void> {
 
   function connect(): void {
     if (closed) return;
-    const ws = new WebSocket(streams.url, {
-      headers: { Authorization: `Bearer ${streams.token}` },
-    });
+    if (streams.requireProof) {
+      const check = verifyBridgeProof(streams.configDir || configDir());
+      if (!check.ok) {
+        log(streams, `not connecting with token: ${check.reason}`);
+        scheduleReconnect();
+        return;
+      }
+    }
+    const headers = { Authorization: `Bearer ${streams.token}` };
+    const sockPath = streams.socketPath;
+    const useUnix = Boolean(sockPath && process.platform !== "win32" && fs.existsSync(sockPath));
+    const ws = useUnix
+      ? new WebSocket("ws://127.0.0.1/host", { headers, socketPath: sockPath })
+      : new WebSocket(streams.url, { headers });
     socket = ws;
 
     ws.on("open", () => {
-      log(streams, `connected to ${streams.url}`);
+      log(streams, `connected to ${useUnix ? sockPath : streams.url}`);
       ws.send(JSON.stringify({ type: "hello", role: "host", version: VERSION }));
       writeNative(streams.stdout, { type: "bridge-status", connected: true });
     });

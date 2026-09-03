@@ -1,7 +1,7 @@
 import { dispatch, handlePermissionDecision, getLastError, setLastError, status } from "./actions.js";
 
 const NATIVE_HOST = "com.agentchrome.host";
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 
 let nativePort = null;
 let reconnectTimer = null;
@@ -103,8 +103,19 @@ try {
   // alarms permission should be present
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+function isExtensionPageSender(sender) {
+  return Boolean(sender) && sender.id === chrome.runtime.id && sender.tab == null;
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message !== "object") return;
+  if (
+    message.type === "permission-decision" ||
+    message.type === "reconnect" ||
+    message.type === "popup-status"
+  ) {
+    if (!isExtensionPageSender(sender)) return;
+  }
   if (message.type === "permission-decision") {
     handlePermissionDecision(message).then(sendResponse);
     return true;

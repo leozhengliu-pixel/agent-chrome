@@ -46,3 +46,15 @@ test("ndjson roundtrip and blank lines", () => {
   const chunk = Buffer.concat([encodeNdjson(a), Buffer.from("\n"), encodeNdjson({ id: 2 })]);
   assert.deepEqual(decoder.push(chunk), [a, { id: 2 }]);
 });
+
+test("ndjson rejects oversized unterminated buffer", () => {
+  const decoder = new NdjsonDecoder();
+  const big = "x".repeat(MAX_NATIVE_MESSAGE_BYTES + 1);
+  assert.throws(() => decoder.push(big), /too large/);
+});
+
+test("ndjson rejects an oversized line", () => {
+  const decoder = new NdjsonDecoder();
+  const line = `${"y".repeat(MAX_NATIVE_MESSAGE_BYTES + 1)}\n`;
+  assert.throws(() => decoder.push(line), /too large/);
+});

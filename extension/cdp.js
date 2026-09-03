@@ -32,7 +32,6 @@ export async function ensureAttached(tabId) {
   attached.add(tabId);
   await send(tabId, "Page.enable");
   await send(tabId, "DOM.enable");
-  await send(tabId, "Runtime.enable");
   await send(tabId, "Accessibility.enable");
   try {
     await send(tabId, "Overlay.enable");

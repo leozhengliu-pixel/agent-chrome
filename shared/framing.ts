@@ -49,8 +49,17 @@ export class NdjsonDecoder {
       if (idx === -1) break;
       const line = this.buf.slice(0, idx).trim();
       this.buf = this.buf.slice(idx + 1);
+      if (line.length > MAX_NATIVE_MESSAGE_BYTES) {
+        this.buf = "";
+        throw new Error(`ndjson message too large: ${line.length} bytes`);
+      }
       if (!line) continue;
       out.push(JSON.parse(line));
+    }
+    if (this.buf.length > MAX_NATIVE_MESSAGE_BYTES) {
+      const n = this.buf.length;
+      this.buf = "";
+      throw new Error(`ndjson buffer too large: ${n} bytes`);
     }
     return out;
   }

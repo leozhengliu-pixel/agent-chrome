@@ -1,8 +1,8 @@
-import { evaluatePolicy, applyDecision } from "./policy.js";
+import { evaluatePolicy, applyDecision, filterListedTabs } from "./policy.js";
 import { buildSnapshot } from "./ax.js";
 import * as cdp from "./cdp.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const GROUP_TITLE = "Agent Chrome";
 const STORAGE_KEY = "sitePolicy";
 
@@ -251,7 +251,8 @@ export async function status() {
 export async function tabsList(params = {}) {
   const query = params.currentWindow ? { currentWindow: true } : {};
   const tabs = await chrome.tabs.query(query);
-  return { tabs: tabs.map(serializeTab) };
+  const stored = await getStoredPolicy();
+  return { tabs: filterListedTabs(tabs, stored, onceAllowed).map(serializeTab) };
 }
 
 export async function tabsOpen(params) {
@@ -268,7 +269,7 @@ export async function tabsOpen(params) {
 
 export async function tabsClose(params) {
   const tabId = Number(params.tabId);
-  await getTab(tabId);
+  await ensureTabAllowed(tabId);
   await chrome.tabs.remove(tabId);
   tabRefs.delete(tabId);
   lastPointer.delete(tabId);
@@ -278,7 +279,7 @@ export async function tabsClose(params) {
 
 export async function tabFocus(params) {
   const tabId = Number(params.tabId);
-  const tab = await getTab(tabId);
+  const tab = await ensureTabAllowed(tabId);
   await chrome.tabs.update(tabId, { active: true });
   await chrome.windows.update(tab.windowId, { focused: true });
   if (cdp.isAttached(tabId)) await armPointer(tabId);
@@ -407,7 +408,7 @@ export async function wait(params = {}) {
   }
   if (ms > 0) await new Promise((r) => setTimeout(r, ms));
   if (params.tabId != null) {
-    const tab = await getTab(Number(params.tabId));
+    const tab = await ensureTabAllowed(Number(params.tabId));
     return { waited: ms, tab: serializeTab(tab) };
   }
   return { waited: ms };

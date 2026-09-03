@@ -58,7 +58,7 @@ Set `AGENT_CHROME_NO_LAUNCH=1` to disable auto-open. The launcher never uses `--
 npx -y agent-chrome --mcp
 ```
 
-After a global install you can also run `agent-chrome --mcp`. The process binds `127.0.0.1:19831`. If another Agent Chrome bridge already owns that port, MCP attaches to it.
+After a global install you can also run `agent-chrome --mcp`. The process binds `127.0.0.1:19831`. If another **proven** Agent Chrome bridge already owns that port (pid-proof file in the config dir), MCP attaches to it. A stranger occupying the port does not receive the auth token. Bind a non-loopback address only with `AGENT_CHROME_ALLOW_NON_LOOPBACK=1` (a footgun; see SECURITY.md).
 
 ### Cursor `mcp.json`
 
@@ -108,7 +108,7 @@ Three processes:
 
 1. **extension/** — Manifest V3 service worker. Native messaging, `chrome.debugger` on agent tabs, tab listing, optional tab-group isolation, first-visit site policy, persistent agent cursor and tab cursor icon.
 2. **host/** — Native messaging host (Node). Chrome launches it on stdio. It is a client of the bridge; it does not listen.
-3. **bridge/** — HTTP + WebSocket on `127.0.0.1:19831` (token in the user config dir) and an MCP stdio server named `agent-chrome`.
+3. **bridge/** — HTTP + WebSocket on `127.0.0.1:19831` (Bearer token in the user config dir; Unix socket `bridge.sock` preferred on macOS/Linux) and an MCP stdio server named `agent-chrome`.
 
 The installer (`npm run install-host` / `node scripts/install-native-host.js`) writes `com.agentchrome.host.json` for Chrome, Chromium, and Edge on macOS, Linux, and Windows (HKCU). `allowed_origins` is `chrome-extension://pikkhapdmpoooagfjiogpjaleapphnmh/`. Compile TypeScript so `dist/` exists before installing the host.
 
@@ -120,13 +120,15 @@ Token file (created on first bridge start; treat as a secret):
 
 ## Site policy
 
-HTTP(S) sites are allowed by default. Chrome already asked for host access when the extension was loaded. There is no per-site confirmation popup.
+Public HTTP(S) sites are allowed by default. Chrome already asked for host access when the extension was loaded. There is no per-site confirmation popup for those sites.
 
-An explicit deny list in extension storage can still block a domain. Internal URLs always proceed. JavaScript evaluation (`eval_js`) is not available in v1.
+Loopback, RFC1918, link-local, and cloud-metadata addresses are denied. `file:`, `javascript:`, `data:`, and `ftp:` are denied. `chrome://` / `devtools:` URLs are not auto-allowed (`about:blank` and this extension's own origin are). `chrome://extensions` is not default-proceed.
+
+An explicit deny list in extension storage can still block a domain (hostname and eTLD+1, including `foo.github.io`). JavaScript evaluation (`eval_js`) is not available in v1.
 
 ## Tab isolation
 
-`tabs_open` defaults to a background tab in an Agent Chrome tab group and does not steal the user's active tab. Call `tab_focus` only when you must.
+`tabs_open` defaults to a background tab in an Agent Chrome tab group and does not steal the user's active tab. That group is **only** a default for the new tab. Later tools (`tabs_list`, `tab_focus`, `snapshot`, `click`, ...) are not bound to it and can target any tab in the signed-in profile (subject to site policy). Call `tab_focus` only when you must.
 
 ## Tools (v1)
 

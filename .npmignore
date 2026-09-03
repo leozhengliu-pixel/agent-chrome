@@ -8,3 +8,6 @@ extension/key.pem
 *.pem
 **/*.pem
 README.md.test
+
+**/*.map
+*.map
