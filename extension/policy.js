@@ -1,6 +1,6 @@
 /**
  * Site-access policy used by the service worker and unit tests.
- * First visit to a new registrable domain → prompt Allow once / Allow site / Deny.
+ * HTTP(S) sites are allowed by default. Chrome already granted host access at install. An optional deny list can still block a domain.
  */
 
 const MULTI_PART_TLDS = new Set([
@@ -116,7 +116,7 @@ export function evaluatePolicy(input) {
   if (stored?.decision === "deny") {
     return { action: "deny", domain, reason: "deny_site" };
   }
-  return { action: "prompt", domain, reason: "unknown_site" };
+  return { action: "proceed", domain, reason: "default_allow" };
 }
 
 export function applyDecision(state, domain, decision) {

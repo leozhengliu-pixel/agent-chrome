@@ -27,13 +27,14 @@ test("internal chrome URLs proceed without prompt", () => {
   assert.equal(v.reason, "internal");
 });
 
-test("unknown https site prompts", () => {
+test("unknown https site is allowed by default", () => {
   const v = evaluatePolicy({
     url: "https://news.example.com/path",
     stored: {},
     once: new Set(),
   });
-  assert.equal(v.action, "prompt");
+  assert.equal(v.action, "proceed");
+  assert.equal(v.reason, "default_allow");
   assert.equal(v.domain, "example.com");
 });
 
@@ -77,7 +78,7 @@ test("allow once is session-only", () => {
     stored: {},
     once: new Set(),
   });
-  assert.equal(later.action, "prompt");
+  assert.equal(later.action, "proceed");
 });
 
 test("unsupported protocols are denied", () => {

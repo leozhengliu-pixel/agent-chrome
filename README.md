@@ -78,13 +78,9 @@ Protocol: JSON-RPC 2.0 NDJSON (initialize, tools/list, tools/call). Server name:
 
 ## Site policy
 
-The first agent action against a new registrable domain opens a small Chrome window:
+HTTP(S) sites are allowed by default. Chrome already asked for host access when the extension was loaded. There is no per-site confirmation popup.
 
-- Allow once — this Chrome session
-- Allow site — remembered in extension storage
-- Deny — block agent actions on that domain
-
-Internal URLs skip the prompt. JavaScript evaluation is not available in v1.
+An explicit deny list in extension storage can still block a domain. Internal URLs always proceed. JavaScript evaluation is not available in v1.
 
 ## Tab isolation
 
@@ -115,5 +111,5 @@ Run the package test script after installing dependencies. No live Chrome is req
 - Popup Bridge: offline — start node dist/bridge/index.js --mcp.
 - Tools error EXTENSION_DISCONNECTED — Chrome could not be started, the extension is not loaded/enabled (ID pikkhapdmpoooagfjiogpjaleapphnmh), the wrong profile is open, or the host cannot reach 127.0.0.1:19831. Check `status.chromeLaunch` for the command used or the skip reason. Disable auto-launch with AGENT_CHROME_NO_LAUNCH=1.
 - Chrome binary not found — install Google Chrome; the error names the OS and paths/commands that were tried.
-- Site prompt never appears — the domain may have been previously denied in extension storage.
+- `SITE_DENIED` — the domain is on the optional deny list in extension storage.
 - A debugger infobar on a tab is expected when chrome.debugger is attached.
