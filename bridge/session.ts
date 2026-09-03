@@ -9,9 +9,16 @@ type Pending = {
   timer: NodeJS.Timeout;
 };
 
+type ConnectWaiter = {
+  resolve: () => void;
+  reject: (err: Error) => void;
+  timer: NodeJS.Timeout;
+};
+
 export class Session {
   private socket: WebSocket | null = null;
   private pending = new Map<string, Pending>();
+  private connectWaiters: ConnectWaiter[] = [];
   lastHello: Record<string, unknown> | null = null;
   constructor(private mcpCommand = "") {}
 
@@ -30,13 +37,31 @@ export class Session {
     this.socket = socket;
     socket.on("message", (data) => this.onMessage(data.toString()));
     socket.on("close", () => {
-      if (this.socket === socket) this.socket = null;
+      if (this.socket !== socket) return;
+      this.socket = null;
       this.flushDisconnected();
     });
     socket.on("error", () => {
       /* close handler will flush */
     });
     this.sendRaw({ type: "hello", role: "bridge", version: VERSION, mcpCommand: this.mcpCommand });
+    this.flushConnectWaiters(true);
+  }
+
+  waitUntilConnected(timeoutMs: number): Promise<void> {
+    if (this.connected) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const entry: ConnectWaiter = {
+        resolve,
+        reject,
+        timer: setTimeout(() => {
+          this.connectWaiters = this.connectWaiters.filter((w) => w !== entry);
+          reject(ExtensionDisconnectedError.afterLaunchTimeout());
+        }, timeoutMs),
+      };
+      this.connectWaiters.push(entry);
+      if (this.connected) this.flushConnectWaiters(true);
+    });
   }
 
   private onMessage(raw: string): void {
@@ -73,7 +98,18 @@ export class Session {
     this.socket.send(JSON.stringify(value));
   }
 
+  private flushConnectWaiters(success: boolean, err?: Error): void {
+    const waiters = this.connectWaiters;
+    this.connectWaiters = [];
+    for (const waiter of waiters) {
+      clearTimeout(waiter.timer);
+      if (success) waiter.resolve();
+      else waiter.reject(err || new ExtensionDisconnectedError());
+    }
+  }
+
   private flushDisconnected(): void {
+    this.flushConnectWaiters(false);
     for (const [id, pending] of this.pending) {
       clearTimeout(pending.timer);
       pending.reject(new ExtensionDisconnectedError());

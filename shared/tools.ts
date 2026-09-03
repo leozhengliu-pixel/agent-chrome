@@ -21,7 +21,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "status",
     description:
-      "Bridge, native host, and extension connectivity. Always works even if Chrome is disconnected.",
+      "Bridge, native host, and extension connectivity. Always works even if Chrome is disconnected; does not launch Chrome. Reports extensionConnected, chromeLaunchAttempted, and chromeLaunch.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
@@ -207,6 +207,7 @@ export const TOOLS: ToolDef[] = [
 export const TOOL_NAMES = TOOLS.map((t) => t.name);
 
 export const INTERACTIVE_TOOLS = new Set([
+  "tabs_list",
   "tabs_open",
   "tabs_close",
   "tab_focus",

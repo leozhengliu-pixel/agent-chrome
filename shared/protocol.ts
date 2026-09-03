@@ -48,4 +48,10 @@ export class ExtensionDisconnectedError extends Error {
     super(message);
     this.name = "ExtensionDisconnectedError";
   }
+
+  static afterLaunchTimeout(): ExtensionDisconnectedError {
+    return new ExtensionDisconnectedError(
+      "Chrome was launched but the extension did not connect. Load the unpacked extension (ID pikkhapdmpoooagfjiogpjaleapphnmh) and keep it enabled. If Chrome is already running, the extension may not be loaded in this profile.",
+    );
+  }
 }

@@ -4,13 +4,24 @@ import { Session } from "./session.js";
 import { VERSION, BRIDGE_PORT } from "../shared/constants.js";
 import { ExtensionDisconnectedError } from "../shared/protocol.js";
 import { INTERACTIVE_TOOLS, TOOLS } from "../shared/tools.js";
+import {
+  CHROME_CONNECT_TIMEOUT_MS,
+  ChromeLaunchError,
+  describeChromeLaunch,
+  launchChrome,
+  type LaunchChromeResult,
+} from "../shared/launch-chrome.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
+
+export type ChromeLauncher = () => LaunchChromeResult | Promise<LaunchChromeResult>;
 
 export type BridgeOptions = {
   host?: string;
   port?: number;
   token: string;
   mcpCommand?: string;
+  launchChrome?: ChromeLauncher;
+  connectTimeoutMs?: number;
 };
 
 export type Bridge = {
@@ -51,6 +62,10 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
   const host = options.host || "127.0.0.1";
   const mcpCommand = options.mcpCommand || "";
   const session = new Session(mcpCommand);
+  const launcher: ChromeLauncher = options.launchChrome || (() => launchChrome());
+  const connectTimeoutMs = options.connectTimeoutMs ?? CHROME_CONNECT_TIMEOUT_MS;
+  let lastLaunch: LaunchChromeResult | null = null;
+  let ensuring: Promise<void> | null = null;
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://${host}`);
@@ -83,7 +98,8 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
       json(res, 404, { error: { code: "NOT_FOUND", message: "unknown route" } });
     } catch (err) {
       const e = err as Error & { code?: string };
-      const status = e instanceof ExtensionDisconnectedError ? 503 : 400;
+      const status =
+        e instanceof ExtensionDisconnectedError || e instanceof ChromeLaunchError ? 503 : 400;
       json(res, status, { error: { code: e.code || "ERROR", message: e.message } });
     }
   });
@@ -100,6 +116,39 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
       session.attach(ws);
     });
   });
+
+  async function doEnsureConnected(): Promise<void> {
+    if (session.connected) return;
+    try {
+      lastLaunch = await Promise.resolve(launcher());
+    } catch (err) {
+      lastLaunch = { attempted: false, skipReason: (err as Error).message };
+      throw err;
+    }
+    if (session.connected) return;
+    if (!lastLaunch.attempted) {
+      const skip = lastLaunch.skipReason ? ` Chrome auto-launch skipped: ${lastLaunch.skipReason}.` : "";
+      throw new ExtensionDisconnectedError(
+        `Agent Chrome extension is disconnected.${skip} Load the unpacked extension, keep Chrome open, and confirm the popup shows Connected.`,
+      );
+    }
+    try {
+      await session.waitUntilConnected(connectTimeoutMs);
+    } catch (err) {
+      if (err instanceof ExtensionDisconnectedError) throw err;
+      throw ExtensionDisconnectedError.afterLaunchTimeout();
+    }
+  }
+
+  async function ensureConnected(): Promise<void> {
+    if (session.connected) return;
+    if (!ensuring) {
+      ensuring = doEnsureConnected().finally(() => {
+        ensuring = null;
+      });
+    }
+    await ensuring;
+  }
 
   async function rpc(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     if (method === "status") {
@@ -118,13 +167,15 @@ export async function startBridge(options: BridgeOptions): Promise<Bridge> {
         host: { connected: session.connected },
         extension: extension || { connected: false },
         extensionConnected: session.connected,
+        chromeLaunchAttempted: Boolean(lastLaunch?.attempted),
+        chromeLaunch: lastLaunch?.command || lastLaunch?.skipReason || describeChromeLaunch(),
         mcpCommand,
         lastError: extensionError,
         tools: TOOLS.map((t) => t.name),
       };
     }
     if (INTERACTIVE_TOOLS.has(method) && !session.connected) {
-      throw new ExtensionDisconnectedError();
+      await ensureConnected();
     }
     return session.request(method, params);
   }

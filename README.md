@@ -37,7 +37,9 @@ Token file (created on first bridge start):
 3. Confirm the ID is pikkhapdmpoooagfjiogpjaleapphnmh (public key in manifest.json; private key at extension/key.pem).
 4. Pin the toolbar icon. The popup shows native-host / bridge status, version, last error, and the MCP command.
 
-Keep Chrome running. The extension must stay enabled.
+Keep the unpacked extension enabled. If Chrome is closed, interactive tools (tabs, snapshot, click, …) automatically open Google Chrome with your signed-in profile (Default, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so the extension must already have been loaded once. `status` never launches Chrome.
+
+Set `AGENT_CHROME_NO_LAUNCH=1` to disable auto-open. The launcher never uses `--headless`, `--remote-debugging-port`, or a temp user-data-dir.
 
 ## Start the bridge and MCP
 
@@ -111,6 +113,7 @@ Run the package test script after installing dependencies. No live Chrome is req
 
 - Popup Native host: offline — rerun node scripts/install-native-host.js, confirm extension ID, reload the extension.
 - Popup Bridge: offline — start node dist/bridge/index.js --mcp.
-- Tools error EXTENSION_DISCONNECTED — Chrome is closed, the extension is disabled, or the host cannot reach 127.0.0.1:19831.
+- Tools error EXTENSION_DISCONNECTED — Chrome could not be started, the extension is not loaded/enabled (ID pikkhapdmpoooagfjiogpjaleapphnmh), the wrong profile is open, or the host cannot reach 127.0.0.1:19831. Check `status.chromeLaunch` for the command used or the skip reason. Disable auto-launch with AGENT_CHROME_NO_LAUNCH=1.
+- Chrome binary not found — install Google Chrome; the error names the OS and paths/commands that were tried.
 - Site prompt never appears — the domain may have been previously denied in extension storage.
 - A debugger infobar on a tab is expected when chrome.debugger is attached.
