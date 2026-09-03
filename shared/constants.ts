@@ -1,0 +1,9 @@
+export const VERSION = "1.0.0";
+export const PRODUCT_NAME = "Agent Chrome";
+export const MCP_SERVER_NAME = "agent-chrome";
+export const NATIVE_HOST_NAME = "com.agentchrome.host";
+export const EXTENSION_ID = "pikkhapdmpoooagfjiogpjaleapphnmh";
+export const BRIDGE_HOST = "127.0.0.1";
+export const BRIDGE_PORT = 19831;
+export const MAX_NATIVE_MESSAGE_BYTES = 1024 * 1024;
+export const AGENT_TAB_GROUP_TITLE = "Agent Chrome";

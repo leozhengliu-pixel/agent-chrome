@@ -1,0 +1,35 @@
+{
+  "name": "agent-chrome",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome MV3 extension + local bridge so any coding agent can control the user's signed-in Chrome.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "agent-chrome": "./dist/bridge/index.js",
+    "agent-chrome-host": "./dist/host/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node --test dist/tests/*.js",
+    "start": "node dist/bridge/index.js",
+    "mcp": "node dist/bridge/index.js --mcp",
+    "install-host": "node scripts/install-native-host.js",
+    "icons": "node scripts/generate-icons.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leozhengliu-pixel/agent-chrome.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.24",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.8.2"
+  }
+}

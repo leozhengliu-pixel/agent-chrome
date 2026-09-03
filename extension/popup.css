@@ -1,0 +1,46 @@
+* { box-sizing: border-box; }
+body {
+  font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+  margin: 0;
+  width: 340px;
+  color: #0f172a;
+  background: #f8fafc;
+}
+header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px 8px;
+  background: #042f2e;
+  color: #ecfeff;
+}
+.mark {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #14b8a6; color: #042f2e;
+  display: grid; place-items: center; font-weight: 800;
+}
+h1 { font-size: 15px; margin: 0; }
+#version { margin: 0; opacity: 0.8; font-size: 12px; }
+section { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; }
+.row { display: flex; justify-content: space-between; align-items: center; margin: 4px 0; }
+.label { font-weight: 600; color: #475569; margin: 0 0 6px; }
+.pill {
+  border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 700;
+}
+.pill.on { background: #ccfbf1; color: #0f766e; }
+.pill.off { background: #fee2e2; color: #b91c1c; }
+pre {
+  margin: 0 0 8px; padding: 8px; background: #0f172a; color: #e2e8f0;
+  border-radius: 6px; white-space: pre-wrap; word-break: break-all; font-size: 11px;
+}
+button {
+  border: 0; background: #0f766e; color: white; border-radius: 6px;
+  padding: 6px 10px; cursor: pointer; font-weight: 600;
+}
+button:hover { background: #115e59; }
+.error { margin: 0; color: #b45309; min-height: 1.4em; }
+footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px 12px;
+}
+.muted { color: #64748b; font-size: 10px; max-width: 200px; word-break: break-all; }

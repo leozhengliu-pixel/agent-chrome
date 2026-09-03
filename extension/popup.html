@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Agent Chrome</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="mark">A</div>
+    <div>
+      <h1>Agent Chrome</h1>
+      <p id="version">v1.0.0</p>
+    </div>
+  </header>
+  <section class="status">
+    <div class="row">
+      <span class="label">Native host</span>
+      <span id="native" class="pill off">offline</span>
+    </div>
+    <div class="row">
+      <span class="label">Bridge</span>
+      <span id="bridge" class="pill off">offline</span>
+    </div>
+  </section>
+  <section>
+    <p class="label">MCP command</p>
+    <pre id="mcp">node /path/to/agent-chrome/dist/bridge/index.js --mcp</pre>
+    <button id="copy" type="button">Copy command</button>
+  </section>
+  <section>
+    <p class="label">Last error</p>
+    <p id="error" class="error">None</p>
+  </section>
+  <footer>
+    <button id="reconnect" type="button">Reconnect</button>
+    <span id="extid" class="muted"></span>
+  </footer>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

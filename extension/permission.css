@@ -1,0 +1,16 @@
+body {
+  font: 14px/1.45 ui-sans-serif, system-ui, sans-serif;
+  margin: 0; padding: 18px 20px; color: #0f172a; background: #f8fafc;
+}
+h1 { font-size: 16px; margin: 0 0 10px; }
+.domain { font-size: 18px; font-weight: 800; color: #0f766e; margin: 8px 0; }
+.url { color: #64748b; word-break: break-all; font-size: 12px; }
+.hint { color: #475569; font-size: 12px; }
+.actions { display: flex; gap: 8px; margin-top: 16px; }
+button {
+  flex: 1; border: 0; border-radius: 8px; padding: 8px 10px;
+  cursor: pointer; font-weight: 700;
+}
+.primary { background: #0f766e; color: white; }
+.danger { background: #fef2f2; color: #b91c1c; }
+#once { background: #e2e8f0; }

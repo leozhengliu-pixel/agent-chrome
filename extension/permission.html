@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Agent Chrome site access</title>
+  <link rel="stylesheet" href="permission.css" />
+</head>
+<body>
+  <h1>Allow Agent Chrome on this site?</h1>
+  <p>A coding agent wants to control a tab on:</p>
+  <p id="domain" class="domain"></p>
+  <p id="url" class="url"></p>
+  <p class="hint">Allow once lasts until Chrome restarts. Allow site is remembered. Deny blocks agent actions on this registrable domain.</p>
+  <div class="actions">
+    <button id="once" type="button">Allow once</button>
+    <button id="site" type="button" class="primary">Allow site</button>
+    <button id="deny" type="button" class="danger">Deny</button>
+  </div>
+  <script src="permission.js" type="module"></script>
+</body>
+</html>
