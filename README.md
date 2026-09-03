@@ -28,7 +28,7 @@ Token file (created on first bridge start):
 
 - Linux: ~/.config/agent-chrome/token
 - macOS: ~/Library/Application Support/agent-chrome/token
-- Windows: %%APPDATA%%\\agent-chrome\\token
+- Windows: %APPDATA%/agent-chrome/token
 
 ## Load unpacked
 
