@@ -17,6 +17,7 @@
     "start": "node dist/bridge/index.js",
     "mcp": "node dist/bridge/index.js --mcp",
     "install-host": "node scripts/install-native-host.js",
+    "pack": "node scripts/pack-extension.js",
     "icons": "node scripts/generate-icons.js"
   },
   "repository": {

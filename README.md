@@ -38,6 +38,8 @@ npm run build
 npm run install-host
 ```
 
+`npm run pack` writes `dist/agent-chrome-extension.zip` (`manifest.json` at the zip root, no `key.pem`). CI on `main` uploads that zip as artifact `agent-chrome-extension`. Load unpacked is still required once: branded Google Chrome 137+ dropped `--load-extension`. Coding agents should follow [`skills/agent-chrome/SKILL.md`](skills/agent-chrome/SKILL.md).
+
 `npm test` compiles TypeScript (`tsc`) then runs `node --test`. `dist/` is gitignored, so build (or test) before installing the host or starting MCP.
 
 ### Load the unpacked extension
@@ -47,7 +49,7 @@ npm run install-host
 3. Confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh` (public key in `manifest.json`; private key at `extension/key.pem`, committed on purpose to pin that ID).
 4. Pin the toolbar icon. The popup shows native-host / bridge status, version, last error, and the MCP command.
 
-Keep the unpacked extension enabled. If Chrome is closed, interactive tools automatically open Google Chrome with your signed-in profile (`Default`, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so the extension must already have been loaded once. `status` never launches Chrome.
+Keep the unpacked extension enabled. If Chrome is closed, interactive tools automatically open Google Chrome with your signed-in profile (`Default`, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so Load unpacked is required once (branded Chrome 137+ dropped `--load-extension`). `status` never launches Chrome.
 
 Set `AGENT_CHROME_NO_LAUNCH=1` to disable auto-open. The launcher never uses `--headless`, `--remote-debugging-port`, or a temp user-data-dir.
 
