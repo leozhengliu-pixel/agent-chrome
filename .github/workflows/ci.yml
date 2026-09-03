@@ -17,7 +17,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run pack
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: agent-chrome-extension
           path: dist/agent-chrome-extension.zip
