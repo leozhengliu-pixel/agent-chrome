@@ -1,52 +1,83 @@
 (() => {
-  if (window.__agentChromeHighlightInstalled) return;
-  window.__agentChromeHighlightInstalled = true;
-  let overlay = null;
-  let hideTimer = null;
+  if (window.__agentChromeCursorInstalled) return;
+  window.__agentChromeCursorInstalled = true;
 
-  function ensureOverlay() {
-    if (overlay) return overlay;
-    overlay = document.createElement("div");
-    overlay.id = "agent-chrome-highlight";
-    overlay.style.cssText = [
+  let root = null;
+  let halo = null;
+  let hideTimer = null;
+  let last = null;
+
+  function ensure() {
+    if (root) return root;
+    root = document.createElement("div");
+    root.id = "agent-chrome-cursor";
+    root.style.cssText = [
       "position:fixed",
+      "left:0",
+      "top:0",
       "z-index:2147483647",
       "pointer-events:none",
-      "border:2px solid #14b8a6",
-      "background:rgba(20,184,166,0.18)",
-      "border-radius:4px",
-      "box-shadow:0 0 0 1px rgba(15,23,42,0.25)",
-      "transition:opacity 120ms ease",
+      "opacity:0",
+      "transition:left 180ms ease-out, top 180ms ease-out, opacity 120ms ease",
     ].join(";");
-    const label = document.createElement("div");
-    label.style.cssText = "position:absolute;left:0;top:-18px;background:#042f2e;color:#ecfeff;font:11px/16px ui-sans-serif,system-ui,sans-serif;padding:0 6px;border-radius:3px;white-space:nowrap;";
-    overlay.appendChild(label);
-    document.documentElement.appendChild(overlay);
-    return overlay;
+
+    halo = document.createElement("div");
+    halo.style.cssText = [
+      "position:absolute",
+      "left:-32px",
+      "top:-32px",
+      "width:64px",
+      "height:64px",
+      "border-radius:50%",
+      "background:radial-gradient(circle, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0.28) 38%, rgba(59,130,246,0.08) 62%, rgba(59,130,246,0) 72%)",
+      "transform:scale(1)",
+      "transition:transform 140ms ease-out",
+    ].join(";");
+
+    const pointer = document.createElement("div");
+    pointer.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="24" viewBox="0 0 18 24" fill="none">' +
+      '<path d="M1.2 1.1 L1.2 19.4 L6.1 14.8 L10.6 23.1 L13.4 21.7 L8.8 13.2 L16.6 12.9 Z" fill="#111827" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>' +
+      "</svg>";
+    pointer.style.cssText = "position:absolute;left:0;top:0;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));";
+
+    root.appendChild(halo);
+    root.appendChild(pointer);
+    document.documentElement.appendChild(root);
+    return root;
+  }
+
+  function moveTo(x, y, pulse) {
+    const el = ensure();
+    if (last) {
+      el.style.transition = "left 180ms ease-out, top 180ms ease-out, opacity 120ms ease";
+    } else {
+      el.style.transition = "opacity 120ms ease";
+    }
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+    el.style.opacity = "1";
+    last = { x, y };
+    if (pulse && halo) {
+      halo.style.transform = "scale(1.25)";
+      setTimeout(() => {
+        if (halo) halo.style.transform = "scale(1)";
+      }, 140);
+    }
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      el.style.opacity = "0";
+    }, 1800);
   }
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (!msg || typeof msg !== "object") return;
     if (msg.type === "agent-chrome-clear-highlight") {
-      if (overlay) overlay.style.opacity = "0";
+      if (root) root.style.opacity = "0";
       return;
     }
     if (msg.type !== "agent-chrome-highlight") return;
-    const el = ensureOverlay();
     const rect = msg.rect || {};
-    const w = Math.max(8, rect.width || 24);
-    const h = Math.max(8, rect.height || 24);
-    const left = (rect.x || 0) - w / 2;
-    const top = (rect.y || 0) - h / 2;
-    el.style.left = `${left}px`;
-    el.style.top = `${top}px`;
-    el.style.width = `${w}px`;
-    el.style.height = `${h}px`;
-    el.style.opacity = "1";
-    el.firstChild.textContent = msg.label || "agent";
-    if (hideTimer) clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => {
-      el.style.opacity = "0";
-    }, 1600);
+    moveTo(Number(rect.x) || 0, Number(rect.y) || 0, Boolean(msg.pulse));
   });
 })();

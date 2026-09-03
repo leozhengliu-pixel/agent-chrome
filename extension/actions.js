@@ -185,24 +185,22 @@ function resolveRef(tabId, ref) {
   return map[ref];
 }
 
-async function highlightInPage(tabId, rect, label) {
+async function highlightInPage(tabId, rect, label, opts = {}) {
+  const payload = {
+    type: "agent-chrome-highlight",
+    rect,
+    label,
+    pulse: Boolean(opts.pulse),
+  };
   try {
-    await chrome.tabs.sendMessage(tabId, {
-      type: "agent-chrome-highlight",
-      rect,
-      label,
-    });
+    await chrome.tabs.sendMessage(tabId, payload);
   } catch {
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
         files: ["content.js"],
       });
-      await chrome.tabs.sendMessage(tabId, {
-        type: "agent-chrome-highlight",
-        rect,
-        label,
-      });
+      await chrome.tabs.sendMessage(tabId, payload);
     } catch {
       // page may be restricted
     }
@@ -283,20 +281,19 @@ export async function snapshot(params) {
   };
 }
 
-async function targetRef(tabId, ref) {
+async function targetRef(tabId, ref, opts = {}) {
   await ensureTabAllowed(tabId);
   await cdp.ensureAttached(tabId);
   const node = resolveRef(tabId, ref);
   if (!node.backendDOMNodeId) fail("REF_NOT_FOUND", `Ref ${ref} has no DOM node`);
-  await cdp.highlightNode(tabId, node.backendDOMNodeId);
   const box = await cdp.getBoxCenter(tabId, node.backendDOMNodeId);
-  await highlightInPage(tabId, box, `${ref} ${node.role || ""}`.trim());
+  await highlightInPage(tabId, box, `${ref} ${node.role || ""}`.trim(), opts);
   return { node, box };
 }
 
 export async function click(params) {
   const tabId = Number(params.tabId);
-  const { node, box } = await targetRef(tabId, String(params.ref));
+  const { node, box } = await targetRef(tabId, String(params.ref), { pulse: true });
   const button = params.button || "left";
   const clickCount = Number(params.clickCount || 1);
   for (let i = 1; i <= clickCount; i += 1) {
