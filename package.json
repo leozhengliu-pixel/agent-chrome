@@ -9,7 +9,8 @@
   },
   "bin": {
     "agent-chrome": "./dist/bridge/index.js",
-    "agent-chrome-host": "./dist/host/index.js"
+    "agent-chrome-host": "./dist/host/index.js",
+    "agent-chrome-install-host": "./scripts/install-native-host.js"
   },
   "scripts": {
     "build": "tsc",
@@ -42,5 +43,18 @@
     "mcp",
     "browser",
     "native-messaging"
-  ]
+  ],
+  "files": [
+    "dist/bridge",
+    "dist/host",
+    "dist/shared",
+    "extension",
+    "scripts",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

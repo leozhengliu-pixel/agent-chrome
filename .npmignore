@@ -1,0 +1,10 @@
+**/*.pem
+key.pem
+.git
+.github
+tests
+src
+extension/key.pem
+*.pem
+**/*.pem
+README.md.test

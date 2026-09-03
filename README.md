@@ -40,6 +40,16 @@ npm run install-host
 
 `npm run pack` writes `dist/agent-chrome-extension.zip` (`manifest.json` at the zip root, no `key.pem`). CI on `main` uploads that zip as artifact `agent-chrome-extension`. Load unpacked is still required once: branded Google Chrome 137+ dropped `--load-extension`. Coding agents should follow [`skills/agent-chrome/SKILL.md`](skills/agent-chrome/SKILL.md).
 
+The MCP/bridge is also on the public npm registry as `agent-chrome`:
+
+```bash
+npm install -g agent-chrome
+agent-chrome-install-host
+```
+
+MCP: `npx -y agent-chrome --mcp`
+GitHub Releases: https://github.com/leozhengliu-pixel/agent-chrome/releases for agent-chrome-extension.zip. Load unpacked still required once. No --load-extension.
+
 `npm test` compiles TypeScript (`tsc`) then runs `node --test`. `dist/` is gitignored, so build (or test) before installing the host or starting MCP.
 
 ### Load the unpacked extension

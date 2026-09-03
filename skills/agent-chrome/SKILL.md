@@ -31,7 +31,7 @@ There is no Chrome Web Store listing. Install from source, then load the unpacke
 - Unpacked extension ID: `pikkhapdmpoooagfjiogpjaleapphnmh`
 - Native host: `com.agentchrome.host`
 
-`npm run pack` writes `dist/agent-chrome-extension.zip` with `manifest.json` at the zip root and **without** `key.pem`. CI on `main` uploads that zip as artifact `agent-chrome-extension`. You may `gh run download` the latest successful CI run on `main`, or clone the repo and use the `extension/` folder directly.
+`npm run pack` writes `dist/agent-chrome-extension.zip` with `manifest.json` at the zip root and **without** `key.pem`. Prefer the GitHub Release zip at https://github.com/leozhengliu-pixel/agent-chrome/releases (`agent-chrome-extension.zip`) over CI artifacts. From the public registry, start MCP with `npx -y agent-chrome --mcp`. CI on `main` still uploads that zip as artifact `agent-chrome-extension`. You may clone the repo and use the `extension/` folder directly.
 
 **Do not** launch Chrome with `--load-extension`. Branded Google Chrome 137+ **ignores** that flag. **Do not** use `--remote-debugging-port`. **Do not** scrape Chrome preferences to inject extensions.
 
@@ -49,7 +49,7 @@ npm run build
 npm run install-host
 ```
 
-`npm run mcp` starts the bridge as an MCP stdio server (`node dist/bridge/index.js --mcp`). Register MCP with that **absolute** path.
+`npm run mcp` starts the bridge as an MCP stdio server (`node dist/bridge/index.js --mcp`). Register MCP with that **absolute** path. Preferred from the public registry: `npx -y agent-chrome --mcp`.
 
 Cursor `mcp.json`:
 
@@ -76,7 +76,7 @@ Replace `/ABS/agent-chrome` with the real absolute path you used.
 
 ### Load unpacked once
 
-Load the **folder**, not the zip. If you downloaded the CI artifact, unzip it first and select the directory that contains `manifest.json` at its root (that is the packed extension tree). If you cloned the repo, select `/ABS/agent-chrome/extension`.
+Load the **folder**, not the zip. If you downloaded the GitHub Release zip (preferred over CI artifacts), unzip it first and select the directory that contains `manifest.json` at its root (that is the packed extension tree). If you cloned the repo, select `/ABS/agent-chrome/extension`.
 
 If you can operate the user's desktop:
 
