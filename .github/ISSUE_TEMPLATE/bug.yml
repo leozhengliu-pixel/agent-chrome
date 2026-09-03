@@ -1,0 +1,56 @@
+name: Bug report
+description: Something is broken in Agent Chrome
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for a bug report. Redact tokens and other secrets from logs.
+        Security issues: https://github.com/leozhengliu-pixel/agent-chrome/security/advisories/new
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What went wrong, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps, including MCP tool calls if relevant.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS 15 / Ubuntu 24.04 / Windows 11
+    validations:
+      required: true
+  - type: input
+    id: chrome
+    attributes:
+      label: Chrome version
+      placeholder: e.g. 129.0.6668.90
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node -v` (20+ required).
+      placeholder: v20.x.x
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Popup last error, status output, terminal output from the MCP process. Strip tokens.
+      render: text

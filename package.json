@@ -1,7 +1,7 @@
 {
   "name": "agent-chrome",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "Chrome MV3 extension + local bridge so any coding agent can control the user's signed-in Chrome.",
   "type": "module",
   "engines": {
@@ -31,5 +31,15 @@
     "@types/node": "^20.17.24",
     "@types/ws": "^8.18.1",
     "typescript": "^5.8.2"
-  }
+  },
+  "homepage": "https://github.com/leozhengliu-pixel/agent-chrome#readme",
+  "bugs": {
+    "url": "https://github.com/leozhengliu-pixel/agent-chrome/issues"
+  },
+  "keywords": [
+    "chrome-extension",
+    "mcp",
+    "browser",
+    "native-messaging"
+  ]
 }

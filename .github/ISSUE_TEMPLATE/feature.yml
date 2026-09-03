@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an idea for Agent Chrome
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first, then a concrete proposal.
+        v1 has no eval_js and will not copy proprietary extension source.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or missing today? Who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change (tools, host, extension, docs)?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Other approaches you thought about.
