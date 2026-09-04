@@ -4,7 +4,9 @@
 [![CI](https://github.com/leozhengliu-pixel/agent-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/leozhengliu-pixel/agent-chrome/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/agent-chrome)](https://www.npmjs.com/package/agent-chrome)
 
-Generic Chrome MV3 extension plus a local bridge so any coding agent (Cursor, Claude Code, or a stdio MCP client) can drive the user's signed-in Chrome. It is original software: not a ChatGPT or Codex clone, and not locked to a single vendor.
+**English** | [中文](README.zh-CN.md)
+
+Generic Chrome MV3 extension plus a local bridge so any coding agent (Cursor, Claude Code, or a stdio MCP client) can drive the user's signed-in Chrome.
 
 Agents work through the real desktop browser — cookies, SSO, existing tabs, and the user's profile. No headless Chrome, no remote-debugging port, no throwaway profile.
 
