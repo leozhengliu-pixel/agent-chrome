@@ -57,3 +57,14 @@ test("native host installer refuses other-writable paths", () => {
   assert.match(js, /0o022/);
   assert.match(js, /allowed_origins/);
 });
+
+test("extension version comes from getManifest, not a hardcoded string", () => {
+  const root = repoRoot();
+  for (const rel of ["extension/background.js", "extension/actions.js", "extension/popup.js"]) {
+    const js = fs.readFileSync(path.join(root, rel), "utf8");
+    assert.match(js, /chrome\.runtime\.getManifest\(\)\.version/);
+    assert.doesNotMatch(js, /VERSION\s*=\s*"\d+\.\d+\.\d+"/);
+  }
+  const html = fs.readFileSync(path.join(root, "extension", "popup.html"), "utf8");
+  assert.doesNotMatch(html, /v\d+\.\d+\.\d+/);
+});

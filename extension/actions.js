@@ -2,7 +2,7 @@ import { evaluatePolicy, applyDecision, filterListedTabs } from "./policy.js";
 import { buildSnapshot } from "./ax.js";
 import * as cdp from "./cdp.js";
 
-const VERSION = "1.0.1";
+const VERSION = chrome.runtime.getManifest().version;
 const GROUP_TITLE = "Agent Chrome";
 const STORAGE_KEY = "sitePolicy";
 

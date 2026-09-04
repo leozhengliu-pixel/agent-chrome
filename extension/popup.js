@@ -5,7 +5,7 @@ function pill(el, on, onText, offText) {
 
 async function refresh() {
   const data = await chrome.runtime.sendMessage({ type: "popup-status" });
-  document.getElementById("version").textContent = `v${data.version || "1.0.1"}`;
+  document.getElementById("version").textContent = `v${data.version || chrome.runtime.getManifest().version}`;
   pill(document.getElementById("native"), data.nativeConnected, "connected", "offline");
   pill(document.getElementById("bridge"), data.bridgeConnected, "connected", "offline");
   const mcp = data.mcpCommand || "node /path/to/agent-chrome/dist/bridge/index.js --mcp";

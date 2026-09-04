@@ -1,7 +1,7 @@
 import { dispatch, handlePermissionDecision, getLastError, setLastError, status } from "./actions.js";
 
 const NATIVE_HOST = "com.agentchrome.host";
-const VERSION = "1.0.1";
+const VERSION = chrome.runtime.getManifest().version;
 
 let nativePort = null;
 let reconnectTimer = null;
