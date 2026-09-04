@@ -64,7 +64,15 @@ function installTo(dir, manifest) {
   console.log(`Wrote ${dest}`);
 }
 
-export function installNativeHost() {
+function shouldSkipExtensionInstall(argv = process.argv, env = process.env) {
+  if (argv.includes("--skip-extension")) return true;
+  const v = env.AGENT_CHROME_SKIP_EXTENSION_INSTALL;
+  if (v == null || v.trim() === "") return false;
+  const n = v.trim().toLowerCase();
+  return n !== "0" && n !== "false" && n !== "no";
+}
+
+export function installNativeHost(options = {}) {
   if (!fs.existsSync(hostJs)) {
     console.error("dist/host/index.js is missing. Run the TypeScript build first.");
     process.exit(1);
@@ -114,9 +122,32 @@ export function installNativeHost() {
   console.log(`Native host ${HOST_NAME}`);
   console.log(`Extension origin chrome-extension://${EXT_ID}/`);
   console.log(`Host executable ${wrapperPath}`);
+
+  const skipExt = options.skipExtension ?? shouldSkipExtensionInstall();
+  if (!skipExt) {
+    console.log("");
+    console.log("Next: load the unpacked extension (opens chrome://extensions if needed)…");
+    // Dynamic import so --skip-extension / env skip still works if the helper is absent.
+    return import("./install-extension.js").then(({ installExtensionGuide }) => {
+      const result = installExtensionGuide({
+        noOpen: options.noOpen,
+        force: options.force,
+        json: options.json,
+      });
+      return result;
+    });
+  }
+  console.log("Skipping extension install guide (AGENT_CHROME_SKIP_EXTENSION_INSTALL or --skip-extension).");
+  return Promise.resolve({ skippedExtension: true });
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  installNativeHost();
+  const result = installNativeHost();
+  Promise.resolve(result).then((r) => {
+    if (r && typeof r.code === "number" && r.code !== 0) process.exit(r.code);
+  }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
 }

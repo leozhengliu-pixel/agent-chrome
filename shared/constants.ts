@@ -1,4 +1,4 @@
-export const VERSION = "1.0.2";
+export const VERSION = "1.0.3";
 export const PRODUCT_NAME = "Agent Chrome";
 export const MCP_SERVER_NAME = "agent-chrome";
 export const NATIVE_HOST_NAME = "com.agentchrome.host";

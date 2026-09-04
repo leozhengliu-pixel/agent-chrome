@@ -37,12 +37,16 @@ npm install -g agent-chrome
 agent-chrome-install-host
 ```
 
-Bins: `agent-chrome` (bridge), `agent-chrome-host`, `agent-chrome-install-host`.
+Bins: `agent-chrome` (bridge), `agent-chrome-host`, `agent-chrome-install-host`, `agent-chrome-install-extension`, `agent-chrome-setup`.
 
-### 2. Load the unpacked extension
+`agent-chrome-install-host` also runs the extension install guide: it copies the absolute `extension/` path to the clipboard and opens the extensions page (unless the pinned ID is already detected, or you set `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` / `--skip-extension`). Rerun with `agent-chrome-install-extension`. Combined: `agent-chrome-setup`.
 
-1. Open `chrome://extensions` and enable Developer mode.
-2. Load unpacked and select the folder that contains `manifest.json`:
+### 2. Load the unpacked extension (human residual step)
+
+Silent full auto-install is not possible on branded Google Chrome. After the host installer (or `agent-chrome-install-extension`) opens the extensions page and copies the path:
+
+1. Enable Developer mode (top-right).
+2. Click **Load unpacked** and select/paste the folder that contains `manifest.json` (clipboard already has the absolute path):
    - Global install: `$(npm root -g)/agent-chrome/extension`
    - Or unzip the GitHub Release asset [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest)
 3. Confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh` (public key in `manifest.json`; private key at `extension/key.pem`, committed on purpose to pin that ID).
@@ -150,7 +154,7 @@ extension/   MV3 unpacked extension
 host/        native messaging client (stdio to bridge)
 bridge/      localhost HTTP/WS plus MCP stdio
 shared/      framing, constants, tool schemas
-scripts/     install-native-host, generate-icons
+scripts/     install-native-host, install-extension, generate-icons
 tests/       framing, allowlist, MCP schemas, mock loopback
 skills/      agent skill (SKILL.md)
 ```
@@ -165,7 +169,7 @@ No live Chrome is required. The loopback test speaks length-prefixed native mess
 
 ## Troubleshooting
 
-- Popup Native host: offline — rerun `node scripts/install-native-host.js` (`npm run install-host`), confirm extension ID, reload the extension.
+- Popup Native host: offline — rerun `agent-chrome-install-host` (`npm run install-host`), confirm extension ID, reload the extension. If the extension is missing, run `agent-chrome-install-extension` and complete Load unpacked.
 - Popup Bridge: offline — start `node dist/bridge/index.js --mcp` (`npm run mcp`).
 - Tools error `EXTENSION_DISCONNECTED` — Chrome could not be started, the extension is not loaded/enabled (ID `pikkhapdmpoooagfjiogpjaleapphnmh`), the wrong profile is open, or the host cannot reach `127.0.0.1:19831`. Check `status.chromeLaunch` for the command used or the skip reason. Disable auto-launch with `AGENT_CHROME_NO_LAUNCH=1`.
 - Chrome binary not found — install Google Chrome; the error names the OS and paths/commands that were tried.

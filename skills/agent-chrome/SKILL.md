@@ -41,6 +41,8 @@ npm install -g agent-chrome
 agent-chrome-install-host
 ```
 
+`agent-chrome-install-host` runs the native-host install and then `agent-chrome-install-extension` (unless `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` or `--skip-extension`): it copies the absolute `extension/` path to the clipboard and opens the extensions page when the pinned ID is not already detected (read-only). You may also run `agent-chrome-install-extension` or `agent-chrome-setup` directly.
+
 Start MCP from the public registry (not a clone path):
 
 ```bash
@@ -70,19 +72,19 @@ claude mcp add agent-chrome -- npx -y agent-chrome --mcp
 
 Generic stdio: `npx -y agent-chrome --mcp`
 
-### Load unpacked once
+### Load unpacked once (after install-extension)
 
 Load the **folder**, not the zip. Prefer the extension shipped with the npm package, or unzip the GitHub Release asset.
 
 - Global install: `$(npm root -g)/agent-chrome/extension` (the folder that contains `manifest.json`)
 - Or unzip [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest) and select the directory that contains `manifest.json` at its root
 
-If you can operate the user's desktop:
+If you can operate the user's desktop (after agent-chrome-install-host / agent-chrome-install-extension):
 
 1. Open `chrome://extensions`
 2. Enable Developer mode
 3. Click **Load unpacked**
-4. Select `$(npm root -g)/agent-chrome/extension` (or the unzipped Release folder)
+4. Select `$(npm root -g)/agent-chrome/extension` (or the unzipped Release folder; clipboard has the path)
 
 If you cannot operate the GUI, give the user that exact path and those four clicks. This is one-time; Chrome remembers unpacked extensions after that.
 
