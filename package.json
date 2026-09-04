@@ -1,6 +1,6 @@
 {
   "name": "agent-chrome",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "description": "Chrome MV3 extension + local bridge so any coding agent can control the user's signed-in Chrome.",
   "type": "module",

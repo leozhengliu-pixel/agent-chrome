@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Agent Chrome",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Lets a local coding agent control this signed-in Chrome profile through a native-messaging bridge.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0OPXh6doVRdmaeIyb0sPWPKlOmAa6jwUaZ1IWY0WXbXQt8dY2J7W6i87aeUDRLkuHesE38By51vWhidOj17Y0szz+5xgYMDpQHkPkc4TiIRkODlt1LIogLSEhWXwzZyW9KdDVx9QSvZqLqOCxYg49n5LDBHscyTc5A9zg2kOOLE36EzjTgQ+Q0SybZIthv9jIDAqfuqgoh27FvnOI1iFD9AjJtv4h1lQmkl/TEE4EM5onxVW7RILP7lEmpcgzs5QmcS+eBkU/9A43rch4HCMniA4J1ZdQ2oJKpsK8A9aOTYFzYeRbc+vmOY4Du2qQN+EUHTYGhDx4SDSNt5W6kKcNQIDAQAB",
   "minimum_chrome_version": "116",
