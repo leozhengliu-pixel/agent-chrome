@@ -41,7 +41,7 @@ npm install -g agent-chrome
 agent-chrome-install-host
 ```
 
-`agent-chrome-install-host` runs the native-host install and then `agent-chrome-install-extension` (unless `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` or `--skip-extension`): it copies the absolute `extension/` path to the clipboard and opens the extensions page when the pinned ID is not already detected (read-only). You may also run `agent-chrome-install-extension` or `agent-chrome-setup` directly.
+`agent-chrome-install-host` runs the native-host install and then `agent-chrome-install-extension` (unless `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` or `--skip-extension`): it copies the absolute `extension/` path to the clipboard, opens the extensions page, and reveals the `extension` folder in Finder / the file manager when the pinned ID is not already detected (read-only). You may also run `agent-chrome-install-extension` or `agent-chrome-setup` directly.
 
 Start MCP from the public registry (not a clone path):
 
@@ -74,19 +74,19 @@ Generic stdio: `npx -y agent-chrome --mcp`
 
 ### Load unpacked once (after install-extension)
 
-Load the **folder**, not the zip. Prefer the extension shipped with the npm package, or unzip the GitHub Release asset.
+Load the **folder**, not the zip. Prefer the extension shipped with the npm package, or unzip the GitHub Release asset. The install guide opens Finder (macOS) or the file manager to the extension folder.
 
 - Global install: `$(npm root -g)/agent-chrome/extension` (the folder that contains `manifest.json`)
 - Or unzip [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest) and select the directory that contains `manifest.json` at its root
 
 If you can operate the user's desktop (after agent-chrome-install-host / agent-chrome-install-extension):
 
-1. Open `chrome://extensions`
+1. Open `chrome://extensions` (install guide usually already did)
 2. Enable Developer mode
-3. Click **Load unpacked**
-4. Select `$(npm root -g)/agent-chrome/extension` (or the unzipped Release folder; clipboard has the path)
+3. **macOS (primary):** From the Finder window that opened, **drag the `extension` folder onto the chrome://extensions page**
+4. **Fallback / Windows / Linux:** Click **Load unpacked**, then paste the path (macOS: ⌘⇧G Go to Folder then paste then Choose; Windows/Linux: address/location bar). Clipboard has the path.
 
-If you cannot operate the GUI, give the user that exact path and those four clicks. This is one-time; Chrome remembers unpacked extensions after that.
+If you cannot operate the GUI, give the user that exact path and those steps. This is one-time; Chrome remembers unpacked extensions after that.
 
 Confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh`.
 

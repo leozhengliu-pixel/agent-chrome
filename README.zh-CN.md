@@ -41,18 +41,20 @@ agent-chrome-install-host
 
 命令行工具：`agent-chrome`（bridge）、`agent-chrome-host`、`agent-chrome-install-host`、`agent-chrome-install-extension`、`agent-chrome-setup`。
 
-`agent-chrome-install-host` 也会运行扩展安装引导：把绝对路径 `extension/` 复制到剪贴板并打开扩展页面（除非已检测到固定 ID，或你设置了 `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` / `--skip-extension`）。可用 `agent-chrome-install-extension` 重新运行。合并命令：`agent-chrome-setup`。
+`agent-chrome-install-host` 也会运行扩展安装引导：把绝对路径 `extension/` 复制到剪贴板、打开扩展页面，并在 Finder（或其他文件管理器）中打开 `extension` 文件夹（除非已检测到固定 ID，或你设置了 `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` / `--skip-extension`）。可用 `agent-chrome-install-extension` 重新运行。合并命令：`agent-chrome-setup`。
 
 ### 2. Load the unpacked extension (human residual step)
 
-在品牌版 Google Chrome 上无法静默完成完整自动安装。主机安装程序（或 `agent-chrome-install-extension`）打开扩展页面并复制路径后：
+在品牌版 Google Chrome 上无法静默完成完整自动安装。主机安装程序（或 `agent-chrome-install-extension`）打开 `chrome://extensions`、复制路径，并在文件管理器中显示 `extension` 文件夹后：
 
-1. 启用开发者模式（右上角）。
-2. 点击 **Load unpacked**，选择/粘贴包含 `manifest.json` 的文件夹（剪贴板已有绝对路径）：
+**macOS（推荐）：** 启用开发者模式，然后从打开的 **Finder** 窗口把 `extension` 文件夹**拖到** chrome://extensions 页面上。备选：点击 **Load unpacked** → 按 ⌘⇧G（前往文件夹）→ 粘贴 → 选取。Chrome 文件夹列表不接受 Cmd+V。
+
+**Windows / Linux：** 启用开发者模式 → **Load unpacked** → 在地址栏/位置栏粘贴路径（剪贴板已有；也可能已打开文件管理器窗口）。
+
+文件夹位置：
    - 全局安装：`$(npm root -g)/agent-chrome/extension`
    - 或解压 GitHub Release 资源 [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest)
-3. 确认 ID 为 `pikkhapdmpoooagfjiogpjaleapphnmh`（公钥在 `manifest.json` 中；私钥在 `extension/key.pem`，有意提交以固定该 ID）。
-4. 固定工具栏图标。弹窗会显示 native-host / bridge 状态、版本、最后错误以及 MCP 命令。
+然后确认 ID 为 `pikkhapdmpoooagfjiogpjaleapphnmh`（公钥在 `manifest.json` 中；私钥在 `extension/key.pem`，有意提交以固定该 ID）。固定工具栏图标。弹窗会显示 native-host / bridge 状态、版本、最后错误以及 MCP 命令。
 
 请保持未打包扩展处于启用状态。若 Chrome 已关闭，交互式工具会在 macOS、Linux 和 Windows 上自动打开带已登录配置文件（`Default`，或 `AGENT_CHROME_PROFILE`）的 Google Chrome，然后等待 native host 重新连接（约 25 秒）。Chrome 会恢复先前加载的未打包扩展，因此 Load unpacked 只需一次。`status` 从不启动 Chrome。
 

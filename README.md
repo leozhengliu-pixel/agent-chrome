@@ -41,18 +41,21 @@ agent-chrome-install-host
 
 Bins: `agent-chrome` (bridge), `agent-chrome-host`, `agent-chrome-install-host`, `agent-chrome-install-extension`, `agent-chrome-setup`.
 
-`agent-chrome-install-host` also runs the extension install guide: it copies the absolute `extension/` path to the clipboard and opens the extensions page (unless the pinned ID is already detected, or you set `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` / `--skip-extension`). Rerun with `agent-chrome-install-extension`. Combined: `agent-chrome-setup`.
+`agent-chrome-install-host` also runs the extension install guide: it copies the absolute `extension/` path to the clipboard, opens the extensions page, and opens Finder (or your file manager) to the `extension` folder (unless the pinned ID is already detected, or you set `AGENT_CHROME_SKIP_EXTENSION_INSTALL=1` / `--skip-extension`). Rerun with `agent-chrome-install-extension`. Combined: `agent-chrome-setup`.
 
 ### 2. Load the unpacked extension (human residual step)
 
-Silent full auto-install is not possible on branded Google Chrome. After the host installer (or `agent-chrome-install-extension`) opens the extensions page and copies the path:
+Silent full auto-install is not possible on branded Google Chrome. After the host installer (or `agent-chrome-install-extension`) opens `chrome://extensions`, copies the path, and reveals the `extension` folder:
 
-1. Enable Developer mode (top-right).
-2. Click **Load unpacked** and select/paste the folder that contains `manifest.json` (clipboard already has the absolute path):
+**macOS (primary):** Enable Developer mode, then **drag the `extension` folder from the Finder window onto the chrome://extensions page**. Fallback: **Load unpacked** → press ⌘⇧G (Go to Folder) → paste → Choose. Chrome's folder list does not accept Cmd+V.
+
+**Windows / Linux:** Enable Developer mode → **Load unpacked** → paste the path into the location/address bar (clipboard already has it; a file manager window may also open to the folder).
+
+Folder locations:
    - Global install: `$(npm root -g)/agent-chrome/extension`
    - Or unzip the GitHub Release asset [`agent-chrome-extension.zip`](https://github.com/leozhengliu-pixel/agent-chrome/releases/latest)
-3. Confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh` (public key in `manifest.json`; private key at `extension/key.pem`, committed on purpose to pin that ID).
-4. Pin the toolbar icon. The popup shows native-host / bridge status, version, last error, and the MCP command.
+
+Then confirm the ID is `pikkhapdmpoooagfjiogpjaleapphnmh` (public key in `manifest.json`; private key at `extension/key.pem`, committed on purpose to pin that ID). Pin the toolbar icon. The popup shows native-host / bridge status, version, last error, and the MCP command.
 
 Keep the unpacked extension enabled. If Chrome is closed, interactive tools automatically open Google Chrome with your signed-in profile (`Default`, or `AGENT_CHROME_PROFILE`) on macOS, Linux, and Windows, then wait for the native host to reconnect (~25s). Chrome restores previously loaded unpacked extensions, so Load unpacked is required once. `status` never launches Chrome.
 

@@ -43,6 +43,7 @@ test("installExtensionGuide fails when extension dir is missing", async () => {
     findChromeProfileDirs: () => [],
     copyToClipboard: () => ({ ok: false, method: null, error: "skip" }),
     openChromeExtensionsPage: () => ({ ok: false, error: "skip" }),
+    revealExtensionFolder: () => ({ ok: false, method: null, error: "skip" }),
   });
   assert.equal(result.ok, false);
   assert.equal(result.code, 1);
@@ -80,6 +81,7 @@ test("installExtensionGuide skips open when already loaded unless force", async 
   const mod = await load();
   const id = mod.expectedExtensionId();
   let opened = 0;
+  let revealed = 0;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "agent-chrome-loaded-"));
   fs.writeFileSync(
     path.join(profile, "Preferences"),
@@ -98,11 +100,16 @@ test("installExtensionGuide skips open when already loaded unless force", async 
       opened += 1;
       return { ok: true, command: "noop" };
     },
+    revealExtensionFolder: () => {
+      revealed += 1;
+      return { ok: true, method: "test" };
+    },
   });
   assert.equal(r2.ok, true);
   assert.equal(r2.alreadyLoaded, true);
   assert.equal(r2.opened, false);
   assert.equal(opened, 0);
+  assert.equal(revealed, 0);
 
   const r3 = mod.installExtensionGuide({
     force: true,
@@ -116,9 +123,14 @@ test("installExtensionGuide skips open when already loaded unless force", async 
       opened += 1;
       return { ok: true, command: "noop" };
     },
+    revealExtensionFolder: () => {
+      revealed += 1;
+      return { ok: true, method: "test" };
+    },
   });
   assert.equal(r3.ok, true);
   assert.equal(opened, 0);
+  assert.equal(revealed, 1);
 });
 
 test("install-extension.js source forbids banned Chrome flags and Preference writes", async () => {
@@ -143,3 +155,62 @@ test("findChromeProfileDirs discovers Default under a fake home", async () => {
   assert.ok(dirs.some((d: string) => d.includes("Profile 1")));
 });
 
+test("folderPickerPasteHint for darwin mentions Go to Folder / ⌘⇧G", async () => {
+  const mod = await load();
+  const hint = mod.folderPickerPasteHint("darwin");
+  assert.match(hint, /Go to Folder|⌘⇧G|Cmd/i);
+  assert.match(mod.folderPickerPasteHint("win32"), /address bar|Ctrl\+L/i);
+  assert.match(mod.folderPickerPasteHint("linux"), /location|Ctrl\+L/i);
+});
+
+test("revealExtensionFolder is called during guide when not already loaded", async () => {
+  const mod = await load();
+  const revealed: string[] = [];
+  const logs: string[] = [];
+  const result = mod.installExtensionGuide({
+    force: true,
+    noOpen: true,
+    json: true,
+    platform: "darwin",
+    log: (s: string) => logs.push(String(s)),
+    warn: () => {},
+    findChromeProfileDirs: () => [],
+    copyToClipboard: () => ({ ok: true, method: "pbcopy" }),
+    openChromeExtensionsPage: () => ({ ok: false, error: "skip" }),
+    revealExtensionFolder: (absPath: string) => {
+      revealed.push(absPath);
+      return { ok: true, method: "open" };
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(revealed.length, 1);
+  assert.equal(revealed[0], path.resolve(mod.extensionDir()));
+  assert.equal(result.reveal?.ok, true);
+  assert.equal(result.finder?.method, "open");
+  const payload = JSON.parse(logs[0]);
+  assert.equal(payload.finder.ok, true);
+  assert.equal(payload.reveal.method, "open");
+  assert.ok(payload.checklist.some((line: string) => /drag/i.test(line)));
+});
+
+test("darwin checklist leads with Finder drag; pasteHint is fallback", async () => {
+  const mod = await load();
+  const logs: string[] = [];
+  mod.installExtensionGuide({
+    force: true,
+    noOpen: true,
+    json: false,
+    platform: "darwin",
+    log: (s: string) => logs.push(String(s)),
+    warn: () => {},
+    findChromeProfileDirs: () => [],
+    copyToClipboard: () => ({ ok: true, method: "pbcopy" }),
+    openChromeExtensionsPage: () => ({ ok: false, error: "skip" }),
+    revealExtensionFolder: () => ({ ok: true, method: "open" }),
+  });
+  const text = logs.join("\n");
+  assert.match(text, /Finder/i);
+  assert.match(text, /drag/i);
+  assert.match(text, /Developer mode/i);
+  assert.match(text, /⌘⇧G|Go to Folder/i);
+});
